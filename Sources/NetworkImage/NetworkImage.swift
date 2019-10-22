@@ -14,11 +14,7 @@ public struct NetworkImage: View {
 	@ObservedObject private var imageLoader: NetworkImageLoader
 
 	public init(url: URL) {
-        self.init(request: URLRequest(url: url))
-	}
-	
-    public init(request: URLRequest) {
-		self.imageLoader = NetworkImageLoader(request: request)
+        imageLoader = NetworkImageLoader(url: url)
 	}
 	
 	public var body: some View {

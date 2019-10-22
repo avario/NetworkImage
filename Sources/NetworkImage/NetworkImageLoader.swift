@@ -14,32 +14,43 @@ final public class NetworkImageLoader: ObservableObject {
 
 	public enum State {
 		case loading
-		case error(NetworkError)
+		case error(NetworkError<Void>)
 		case success(UIImage)
 	}
 
 	@Published public var state: State = .loading
 
-    let request: URLRequest
+    private struct ImageRequest: NetworkRequest {
+        let path: String
+        let method: HTTPMethod = .get
 
-    init(request: URLRequest) {
-		self.request = request
+        typealias Response = UIImage
+    }
+
+    private class ImageNetwork: Network {
+        let baseURL: URL
+
+        internal init(baseURL: URL) {
+            self.baseURL = baseURL
+        }
+    }
+
+    private let imageRequest: ImageRequest
+    private let imageNetwork: ImageNetwork
+
+    init(url: URL) {
+        imageRequest = ImageRequest(path: url.lastPathComponent)
+        imageNetwork = ImageNetwork(baseURL: url.deletingLastPathComponent())
 	}
 
 	private var cancellable: Cancellable?
 
 	func load(previewMode: NetworkPreviewMode = .noPreview) {
 
-        cancellable = NetworkKit
-            .request(request, previewMode: previewMode)
-            .tryMap {
-                guard let image = UIImage(data: $0) else {
-                    throw NetworkError.unknown
-                }
-                return .success(image)
-            }
-			.replaceError(with: .error(.unknown))
-			.receive(on: DispatchQueue.main)
+        cancellable = imageNetwork.preview(mode: previewMode)
+            .request(imageRequest)
+            .map { .success($0) }
+            .catch { Just(.error($0)) }
 			.assign(to: \.state, on: self)
 	}
 
