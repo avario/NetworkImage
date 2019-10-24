@@ -12,14 +12,11 @@ let package = Package(
             targets: ["NetworkImage"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/avario/NetworkKit", from: "3.0.0"),
+        .package(url: "https://github.com/avario/NetworkKit", from: "1.0.0"),
     ],
     targets: [
         .target(
             name: "NetworkImage",
-            dependencies: ["NetworkKit"]),
-        .testTarget(
-            name: "NetworkImageTests",
-            dependencies: ["NetworkImage", "NetworkKit"]),
+            dependencies: ["NetworkKit"])
     ]
 )

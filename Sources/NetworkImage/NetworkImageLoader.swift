@@ -45,10 +45,10 @@ final public class NetworkImageLoader: ObservableObject {
 
 	private var cancellable: Cancellable?
 
-	func load(previewMode: NetworkPreviewMode = .noPreview) {
+	func load(previewMode: NetworkPreviewMode = .automatic) {
 
-        cancellable = imageNetwork.preview(mode: previewMode)
-            .request(imageRequest)
+        cancellable = imageRequest
+            .request(on: imageNetwork.preview(previewMode))
             .map { .success($0) }
             .catch { Just(.error($0)) }
 			.assign(to: \.state, on: self)
