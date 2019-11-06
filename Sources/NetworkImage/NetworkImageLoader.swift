@@ -51,6 +51,7 @@ final public class NetworkImageLoader: ObservableObject {
             .request(on: imageNetwork.preview(previewMode))
             .map { .success($0) }
             .catch { Just(.error($0)) }
+            .receive(on: DispatchQueue.main)
 			.assign(to: \.state, on: self)
 	}
 
