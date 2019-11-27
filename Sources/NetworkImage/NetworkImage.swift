@@ -2,8 +2,6 @@ import Combine
 import SwiftUI
 
 public struct NetworkImage: View {
-    @Environment(\.networkImagePreviewMode) private var previewMode: NetworkImagePreviewMode
-
     @ObservedObject private var imageLoader: NetworkImageLoader
 
     public init(url: URL) {
@@ -23,28 +21,7 @@ public struct NetworkImage: View {
                 )
             }
         }
-        .onAppear { self.imageLoader.load(previewMode: self.previewMode) }
+        .onAppear { self.imageLoader.load() }
         .onDisappear(perform: imageLoader.cancel)
-    }
-}
-
-public enum NetworkImagePreviewMode {
-    case automatic
-    case always
-    case never
-}
-
-extension NetworkImagePreviewMode: EnvironmentKey {
-    public static let defaultValue: NetworkImagePreviewMode = .automatic
-}
-
-public extension EnvironmentValues {
-    var networkImagePreviewMode: NetworkImagePreviewMode {
-        get {
-            return self[NetworkImagePreviewMode.self]
-        }
-        set {
-            self[NetworkImagePreviewMode.self] = newValue
-        }
     }
 }
