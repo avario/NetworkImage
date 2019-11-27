@@ -11,9 +11,12 @@ let package = Package(
             name: "NetworkImage",
             targets: ["NetworkImage"]),
     ],
+    dependencies: [
+        .package(url: "https://github.com/onevcat/Kingfisher.git", from: "5.0.0"),
+    ],
     targets: [
         .target(
             name: "NetworkImage",
-            dependencies: [])
+            dependencies: ["KingfisherSwiftUI"])
     ]
 )
