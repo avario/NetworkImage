@@ -1,73 +1,83 @@
-import KingfisherSwiftUI
+import Nuke
 import SwiftUI
 
 public struct NetworkImage: View {
-    let url: URL
+	let url: URL
 
-    public init(url: URL) {
-        self.url = url
-    }
+	@State private var image: UIImage?
 
-    public var body: some View {
-        Group {
-            if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] != nil {
-                Image(uiImage: previewImage ?? UIImage())
-            } else {
-                KFImage(url)
-            }
-        }
-    }
+	public init(url: URL) {
+		self.url = url
 
-    private var previewImage: UIImage? {
-        var urlString = url.absoluteString
-        if let scheme = url.scheme {
-            urlString = urlString.replacingOccurrences(of: "\(scheme)://", with: "")
-        }
+		if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] != nil {
+			image = Self.previewImage(at: url)
+		}
+	}
 
-        guard let assetURL = URL(string: urlString) else {
-            return nil
-        }
+	public var body: some View {
+		Group {
+			if image == nil {
+				Rectangle()
+                    .opacity(0)
+			} else {
+				Image(uiImage: image!)
+					.resizable()
+			}
+		}
+		.onAppear {
+			guard self.image == nil else {
+				return
+			}
 
-        func previewImage(at url: URL) -> UIImage? {
-            let assetName = url.absoluteString
+			ImagePipeline.shared.loadImage(with: self.url) { result in
+				switch result {
+				case .success(let response): self.image = response.image
+				case .failure(let error): print(error)
+				}
+			}
+		}
+	}
 
-            guard assetName.isEmpty == false else {
-                return nil
-            }
+	private static func previewImage(at url: URL) -> UIImage? {
+		var assetName = url.absoluteString
+		if let scheme = url.scheme {
+			assetName = assetName.replacingOccurrences(of: "\(scheme)://", with: "")
+		}
 
-            if let image = UIImage(named: assetName) {
-                return image
-            }
+		guard assetName.isEmpty == false else {
+			return nil
+		}
 
-            let nextURL: URL
+		if let image = UIImage(named: assetName) {
+			return image
+		}
 
-            guard var urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
-                return nil
-            }
+		let nextURL: URL
 
-            if var queryItems = urlComponents.queryItems,
-                queryItems.isEmpty == false {
-                queryItems.removeLast()
+		guard var urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+			return nil
+		}
 
-                if queryItems.isEmpty {
-                    urlComponents.queryItems = nil
-                } else {
-                    urlComponents.queryItems = queryItems
-                }
+		if var queryItems = urlComponents.queryItems,
+			queryItems.isEmpty == false {
+			queryItems.removeLast()
 
-                guard let componentsURL = urlComponents.url else {
-                    return nil
-                }
+			if queryItems.isEmpty {
+				urlComponents.queryItems = nil
+			} else {
+				urlComponents.queryItems = queryItems
+			}
 
-                nextURL = componentsURL
+			guard let componentsURL = urlComponents.url else {
+				return nil
+			}
 
-            } else {
-                nextURL = url.deletingLastPathComponent()
-            }
+			nextURL = componentsURL
 
-            return previewImage(at: nextURL)
-        }
+		} else {
+			nextURL = url.deletingLastPathComponent()
+		}
 
-        return previewImage(at: assetURL)
-    }
+		return previewImage(at: nextURL)
+	}
 }
