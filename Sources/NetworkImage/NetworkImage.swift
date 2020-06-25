@@ -8,17 +8,13 @@ public struct NetworkImage: View {
 
 	public init(url: URL) {
 		self.url = url
-
-		if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] != nil {
-			image = Self.previewImage(at: url)
-		}
 	}
 
 	public var body: some View {
 		Group {
 			if image == nil {
 				Rectangle()
-                    .opacity(0)
+					.opacity(0)
 			} else {
 				Image(uiImage: image!)
 					.resizable()
@@ -29,24 +25,28 @@ public struct NetworkImage: View {
 				return
 			}
 
+			if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] != nil {
+				self.image = Self.previewImage(at: self.url)
+				return
+			}
+
 			ImagePipeline.shared.loadImage(with: self.url) { result in
-				switch result {
-				case .success(let response): self.image = response.image
-				case .failure(let error): print(error)
+				if case .success(let response) = result {
+					self.image = response.image
 				}
 			}
 		}
 	}
 
 	private static func previewImage(at url: URL) -> UIImage? {
-		var assetName = url.absoluteString
 		if let scheme = url.scheme {
-			assetName = assetName.replacingOccurrences(of: "\(scheme)://", with: "")
+			guard let schemelessURL = URL(string: url.absoluteString.replacingOccurrences(of: "\(scheme)://", with: "")) else {
+				return nil
+			}
+			return previewImage(at: schemelessURL)
 		}
 
-		guard assetName.isEmpty == false else {
-			return nil
-		}
+		let assetName = url.absoluteString
 
 		if let image = UIImage(named: assetName) {
 			return image
@@ -76,6 +76,10 @@ public struct NetworkImage: View {
 
 		} else {
 			nextURL = url.deletingLastPathComponent()
+		}
+
+		guard nextURL.lastPathComponent != "." else {
+			return nil
 		}
 
 		return previewImage(at: nextURL)
